@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLUE JACKPOT</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f5f5ff;
+    display: flex;
+    justify-content: center;
+    padding: 30px 16px;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 720px;
+    width: 100%;
+    background: #eaeaff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(80, 80, 200, 0.15);
+    position: relative;
+}
+
+/* 🔴 경고 박스 */
+.alert-box{
+    position:absolute;
+    top:-100px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#4d4dff;
+    color:white;
+    padding:14px 24px;
+    border-radius:999px;
+    text-align:center;
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+    transition: top 0.3s ease, opacity 0.3s ease;
+    opacity: 0;                 /* 기본은 투명 */
+    pointer-events: none;
+    z-index:100;
+}
+
+.alert-box.show{
+    top:10px;
+    opacity: 1;                 /* 내려올 때 보이게 */
+}
+
+
+.alert-title{
+    font-weight:800;
+    font-size:18px;
+}
+
+.alert-msg{
+    font-size:14px;
+    margin-top:5px;
+}
+
+h1 { text-align:center; margin-bottom:30px; font-weight:800; }
+
+.title-main { font-size:38px; color:#4020bb; }
+.title-sub { font-size:18px; color:#409aff; margin-left:8px; }
+
+.input-group {
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.input-group input {
+    flex:1;
+    padding:12px;
+    border-radius:10px;
+    border:1px solid #b0b0f2;
+}
+
+#nameInput { flex: 4; }
+#idInput { flex: 4; }
+#weightInput { flex: 2; }
+
+button {
+    padding:10px 16px;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    font-weight:600;
+    color:white;
+}
+
+
+button:hover {
+    filter: brightness(0.9);
+}
+
+/* 🔹 클릭 시 눌림 효과 (선택사항이지만 추천) */
+button:active {
+    transform: scale(0.97);
+}
+
+.add-btn,
+.select-all-btn,
+.delete-selected-btn,
+.download-btn { background:#6060ff; }
+
+.draw-btn {
+    background:#1313D4;
+    width:100%;
+    margin-bottom:15px;
+    font-weight:700;
+}
+
+.result {
+    margin-bottom:20px;
+    padding:20px;
+    background:#d6d6ff;
+    border-radius:12px;
+    text-align:center;
+    font-weight:700;
+    color:#4160e0;
+    font-size:18px;
+    display:none;
+}
+
+.list-wrapper {
+    background:#fff;
+    border-radius:12px;
+    border:1px solid #b0d0d0;
+    overflow:hidden;
+}
+
+.list-container {
+    max-height:300px;
+    overflow-y:auto;
+}
+
+.list-item {
+    display:flex;
+    align-items:center;
+    padding:10px 15px;
+    border-bottom:1px solid #d0d0e0;
+}
+
+.entry-info { display:flex; gap:10px; flex-wrap:wrap; }
+
+.list-footer {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 15px;
+    background:#d6d6ff;
+    font-weight:600;
+}
+
+.confetti-container {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:999;
+}
+
+.confetti {
+    position:absolute;
+    width:10px;
+    height:16px;
+    opacity:0.8;
+    animation:fall linear forwards;
+}
+
+@keyframes fall {
+    0% { transform: translateY(-10vh) rotate(0deg); }
+    100% { transform: translateY(110vh) rotate(720deg); }
+}
+
+@media (max-width:600px){
+    .input-group { flex-direction:column; }
+    .list-footer { flex-direction:column; gap:10px; align-items:stretch; }
+    .download-btn { width:100%; }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<!-- 🔴 커스텀 경고 -->
+<div id="customAlert" class="alert-box">
+    <div class="alert-title">주의!</div>
+    <div class="alert-msg"></div>
+</div>
+
+<h1>
+<span class="title-main">BLUE JACKPOT</span>
+<span class="title-sub">with Baro</span>
+</h1>
+
+<div class="input-group">
+<input type="text" id="nameInput" placeholder="이름을 입력해주세요">
+<input type="text" id="idInput" placeholder="ID를 입력해주세요">
+<input type="number" id="weightInput"
+       placeholder="응모권 수 입력"
+       min="1" max="4">
+<button class="add-btn" id="addButton">응모하기</button>
+</div>
+
+<button class="draw-btn" id="drawButton">추첨하기</button>
+<div class="result" id="resultBox"></div>
+
+<div class="list-wrapper">
+<div class="list-container" id="entryList"></div>
+
+<div class="list-footer">
+<div>
+<button class="select-all-btn" id="selectAllBtn">전체선택</button>
+<button class="delete-selected-btn" id="deleteBtn">삭제하기</button>
+</div>
+<div id="totalCount">총 응모자 : 0명</div>
+<button class="download-btn" id="downloadBtn">다운로드</button>
+</div>
+</div>
+
+<div id="confettiContainer" class="confetti-container"></div>
+
+<script>
+const STORAGE_KEY="red_jackpot_entries";
+let entries=JSON.parse(localStorage.getItem(STORAGE_KEY))||[];
+let alertTimer;
+
+const nameInput=document.getElementById("nameInput");
+const idInput=document.getElementById("idInput");
+const weightInput=document.getElementById("weightInput");
+const resultBox=document.getElementById("resultBox");
+
+function saveEntries(){
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(entries));
+}
+
+function updateTotalCount(){
+    document.getElementById("totalCount").innerText=
+        `총 응모자 : ${entries.length}명`;
+}
+
+/* 🔴 팝업 함수 */
+function showPopup(message){
+    const alertBox=document.getElementById("customAlert");
+    const alertMsg=alertBox.querySelector(".alert-msg");
+
+    clearTimeout(alertTimer);
+
+    alertMsg.innerHTML=message;
+    alertBox.classList.add("show");
+
+    alertTimer=setTimeout(()=>{
+        alertBox.classList.remove("show");
+    },2300);
+}
+
+function addEntry(){
+    const name=nameInput.value.trim();
+    const id=idInput.value.trim();
+    const weight=parseInt(weightInput.value);
+
+    if(!name||!id){
+        showPopup("이름과 아이디를 모두 입력해주세요.");
+        return;
+    }
+
+    if(isNaN(weight)||weight<1||weight>4){
+        showPopup("응모권 수를 잘못 입력하셨습니다.");
+        return;
+    }
+
+    if(entries.some(e=>e.id===id)){
+        showPopup("이미 등록된 ID입니다.<br>확인 후 다시 입력해주세요.");
+        return;
+    }
+
+    entries.push({name,id,weight});
+    saveEntries();
+    renderList();
+    updateTotalCount();
+
+    nameInput.value="";
+    idInput.value="";
+    weightInput.value="";
+}
+
+function renderList(){
+    const list=document.getElementById("entryList");
+    list.innerHTML="";
+
+    entries.forEach((entry,index)=>{
+        const div=document.createElement("div");
+        div.className="list-item";
+
+        const checkbox=document.createElement("input");
+        checkbox.type="checkbox";
+        checkbox.className="entry-checkbox";
+        checkbox.dataset.index=index;
+
+        const info=document.createElement("div");
+        info.className="entry-info";
+        info.innerHTML=
+            `<span>${entry.name}</span>
+             <span>(@${entry.id})</span>
+             <span>[응모권 ${entry.weight}]</span>`;
+
+        div.appendChild(checkbox);
+        div.appendChild(info);
+        list.appendChild(div);
+    });
+}
+
+function toggleSelectAll(){
+    const checkboxes=document.querySelectorAll(".entry-checkbox");
+    const allChecked=[...checkboxes].every(cb=>cb.checked);
+    checkboxes.forEach(cb=>cb.checked=!allChecked);
+}
+
+function deleteSelected(){
+    const checkboxes=document.querySelectorAll(".entry-checkbox");
+    const selectedIndexes=[];
+    checkboxes.forEach(cb=>{
+        if(cb.checked) selectedIndexes.push(parseInt(cb.dataset.index));
+    });
+    selectedIndexes.sort((a,b)=>b-a);
+    selectedIndexes.forEach(i=>entries.splice(i,1));
+    saveEntries();
+    renderList();
+    updateTotalCount();
+    resultBox.style.display="none";
+}
+
+function downloadCSV(){
+    if(entries.length===0) return;
+    let csvContent="이름,아이디,응모권 수\n";
+    entries.forEach(e=>{
+        csvContent+=`${e.name},${e.id},${e.weight}\n`;
+    });
+    const blob=new Blob(["\uFEFF"+csvContent],{type:"text/csv;charset=utf-8;"});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");
+    link.href=url;
+    link.download="red_jackpot_entries.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function drawWinner(){
+    if(entries.length===0){
+        showPopup("응모자가 없습니다.");
+        return;
+    }
+
+    const totalWeight=entries.reduce((sum,e)=>sum+e.weight,0);
+    let random=Math.floor(Math.random()*totalWeight);
+    let winner=null;
+
+    for(const entry of entries){
+        if(random<entry.weight){
+            winner=entry;
+            break;
+        }
+        random-=entry.weight;
+    }
+
+    resultBox.style.display="block";
+    resultBox.innerText=
+        `🎉 당첨자: ${winner.name} (@${winner.id})`;
+
+    launchConfetti();
+}
+
+function launchConfetti(){
+    const container=document.getElementById("confettiContainer");
+    container.innerHTML="";
+    for(let i=0;i<120;i++){
+        const confetti=document.createElement("div");
+        confetti.className="confetti";
+        confetti.style.left=Math.random()*100+"vw";
+        confetti.style.backgroundColor=
+            ["#ff1e1e","#ff6b6b","#ffb3b3","#d90429"][Math.floor(Math.random()*4)];
+        confetti.style.animationDuration=(Math.random()*3+2)+"s";
+        container.appendChild(confetti);
+    }
+    setTimeout(()=>container.innerHTML="",5000);
+}
+
+document.getElementById("addButton").addEventListener("click",addEntry);
+document.getElementById("drawButton").addEventListener("click",drawWinner);
+document.getElementById("selectAllBtn").addEventListener("click",toggleSelectAll);
+document.getElementById("deleteBtn").addEventListener("click",deleteSelected);
+document.getElementById("downloadBtn").addEventListener("click",downloadCSV);
+
+[nameInput, idInput, weightInput].forEach(input => {
+    input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+            addEntry();
+        }
+    });
+});
+
+renderList();
+updateTotalCount();
+</script>
+
+</body>
+</html>
